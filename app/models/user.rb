@@ -10,8 +10,9 @@
 #
 
 class User < ActiveRecord::Base
-  attr_accessor :password
+ # attr_accessor :password
   attr_accessible :name, :email, :password, :password_confirmation
+  has_many :microposts, :dependent => :destroy
   has_secure_password
 
   before_save { |user| user.email = email.downcase }
@@ -29,7 +30,6 @@ class User < ActiveRecord::Base
                        :length => { :within => 6..40 }
 
   before_save :encrypt_password
-  validates :password_confirmation, presence: true
 def has_password?(submitted_password)
   encrypted_password == encrypt(submitted_password)
 end
@@ -45,6 +45,7 @@ end
   end
   
   private
+
     def create_remember_token
       self.remember_token = SecureRandom.urlsafe_base64
     end
