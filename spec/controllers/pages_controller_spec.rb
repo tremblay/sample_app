@@ -1,84 +1,80 @@
 require 'spec_helper'
 
-describe PagesController do
-  render_views
+describe "pages" do
 
- before(:each) do
-    @base_title = "Ruby on Rails Tutorial Sample App"
-  end
+  subject { page }
 
- describe "GET 'home'" do
+  describe "Home page" do
+    before { visit root_path }
+    
+    it { should have_selector('h1', text: 'Sample App') }
+    it { should have_selector('title', text: full_title('')) }
+    it { should_not have_selector('title', text: '| Home') }
 
-    describe "when not signed in" do
-
-      before(:each) do
-        get :home
+    describe "for signed-in users" do
+      let(:user) { FactoryGirl.create(:user) }
+      before do
+        FactoryGirl.create(:micropost, user: user, content: "Lorem ipsum")
+        FactoryGirl.create(:micropost, user: user, content: "Dolor sit amet")
+        sign_in user
+        visit root_path
       end
 
-      it "should be successful" do
-        response.should be_success
+      it "should render the user's feed" do
+        user.feed.each do |item|
+          page.should have_selector("li##{item.id}", text: item.content)
+        end
       end
 
-      it "should have the right title" do
-        response.should have_selector("title",
-                                      :content => "#{@base_title} | Home")
-      end
-    end
+      describe "follower/following counts" do
+        let(:other_user) { FactoryGirl.create(:user) }
+        before do
+          other_user.follow!(user)
+          visit root_path
+        end
 
-    describe "when signed in" do
-
-      before(:each) do
-        @user = test_sign_in(Factory(:user))
-        other_user = Factory(:user, :email => Factory.next(:email))
-        other_user.follow!(@user)
-      end
-
-      it "should have the right follower/following counts" do
-        get :home
-        response.should have_selector("a", :href => following_user_path(@user),
-                                           :content => "0 following")
-        response.should have_selector("a", :href => followers_user_path(@user),
-                                           :content => "1 follower")
+        it { should have_link("0 following", href: following_user_path(user)) }
+        it { should have_link("1 followers", href: followers_user_path(user)) }
       end
     end
   end
 
-  describe "GET 'contact'" do
-    it "should be successful" do
-      get 'contact'
-      response.should be_success
-    end
-
-#    it "should have the right title" do
- #     get 'contact'
-  #    response.should have_selector("title",
-   #                     :content => "Contact")
-    #end
+  describe "Help page" do
+    before { visit help_path }
+    
+    it { should have_selector('h1', text: 'Help') }
+    it { should have_selector('title', text: full_title('Help')) }
   end
 
-    describe "GET 'help'" do
-    it "should be successful" do
-      get 'help'
-      response.should be_success
-    end
+  describe "About page" do
+    before { visit about_path }
 
-#    it "should have the right title" do
- #     get 'help'
-  #    response.should have_selector("title",
-   #                     :content => "Help")
-    #end
+    it { should have_selector('h1', text: 'About Us') }
+
+    it { should have_selector('title', text: full_title('About Us')) }
   end
 
-  describe "GET 'about'" do
-    it "should be successful" do
-      get 'about'
-      response.should be_success
-    end
+  describe "Contact page" do
+    before { visit contact_path }
+    
+    it { should have_selector('h1', text: 'Contact') }
+    it { should have_selector('title', text: full_title('Contact')) }
+  end
 
-#    it "should have the right title" do
- #     get 'about'
-  #    response.should have_selector("title",
-   #                     :content => "About")
-    #end
+  it "should have the right links on the layout" do
+    visit root_path
+    click_link "Sign in"
+    page.should have_selector 'title', text: full_title('Sign in')
+    click_link "About"
+    page.should have_selector 'title', text: full_title('About Us')
+    click_link "Help"
+    page.should have_selector 'title', text: full_title('Help')
+    click_link "Contact"
+    page.should have_selector 'title', text: full_title('Contact')
+    click_link "Home"
+    click_link "Sign up now!"
+    page.should have_selector 'title', text: full_title('Sign up')
+    click_link "sample app"
+    page.should have_selector 'h1', text: 'Sample App'
   end
 end

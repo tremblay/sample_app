@@ -61,6 +61,7 @@ describe "POST 'create'" do
         flash[:success].should =~ /micropost created/i
       end
     end
+  end
   describe "DELETE 'destroy'" do
 
     describe "for an unauthorized user" do

@@ -1,40 +1,37 @@
 require 'spec_helper'
 
-describe "Microposts" do
+describe "Micropost pages" do
 
-  before(:each) do
-    user = Factory(:user)
-    visit signin_path
-    fill_in :email,    :with => user.email
-    fill_in :password, :with => user.password
-    click_button
-  end
+  subject { page }
 
-  describe "creation" do
+  let(:user) { FactoryGirl.create(:user) }
 
-    describe "failure" do
+  before { sign_in user }
 
-      it "should not make a new micropost" do
-        lambda do
-          visit root_path
-          fill_in :micropost_content, :with => ""
-          click_button
-          response.should render_template('pages/home')
-          response.should have_selector("div#error_explanation")
-        end.should_not change(Micropost, :count)
+  describe "micropost creation" do
+    before { visit root_path }
+
+    describe "with invalid information" do
+      
+      it "should not create a micropost" do
+        expect { click_button "Post" }.not_to change(Micropost, :count)
+      end
+
+      describe "error messages" do
+        before { click_button "Post" }
+        it { should have_content('error') }
       end
     end
+  end
+  
+  describe "micropost destruction" do
+    before { FactoryGirl.create(:micropost, user: user) }
 
-    describe "success" do
+    describe "as correct user" do
+      before { visit root_path }
 
-      it "should make a new micropost" do
-        content = "Lorem ipsum dolor sit amet"
-        lambda do
-          visit root_path
-          fill_in :micropost_content, :with => content
-          click_button
-          response.should have_selector("span.content", :content => content)
-        end.should change(Micropost, :count).by(1)
+      it "should delete a micropost" do
+        expect { click_link "delete" }.should change(Micropost, :count).by(-1)
       end
     end
   end
